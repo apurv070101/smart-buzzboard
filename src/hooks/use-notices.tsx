@@ -84,12 +84,45 @@ export function useNoticeActions() {
   }, []);
 
   const uploadAttachment = useCallback(async (file: File) => {
-    const ext = file.name.split(".").pop();
+    // Server-side validation: allowed MIME types and max size
+    const ALLOWED_TYPES = [
+      "application/pdf",
+      "image/png",
+      "image/jpeg",
+      "image/gif",
+      "image/webp",
+    ];
+    const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      throw new Error("File type not allowed. Please upload a PDF or image (PNG, JPG, GIF, WEBP).");
+    }
+    if (file.size > MAX_SIZE) {
+      throw new Error("File too large. Maximum size is 5 MB.");
+    }
+
+    // Map MIME type to canonical extension (don't trust user filename extension)
+    const MIME_TO_EXT: Record<string, string> = {
+      "application/pdf": "pdf",
+      "image/png": "png",
+      "image/jpeg": "jpg",
+      "image/gif": "gif",
+      "image/webp": "webp",
+    };
+    const ext = MIME_TO_EXT[file.type] || "bin";
     const path = `${crypto.randomUUID()}.${ext}`;
-    const { error } = await supabase.storage.from("attachments").upload(path, file);
+
+    const { error } = await supabase.storage
+      .from("attachments")
+      .upload(path, file, { contentType: file.type });
     if (error) throw error;
-    const { data } = supabase.storage.from("attachments").getPublicUrl(path);
-    return { url: data.publicUrl, name: file.name };
+
+    // Since bucket is private, generate a signed URL (1 year expiry)
+    const { data } = await supabase.storage
+      .from("attachments")
+      .createSignedUrl(path, 60 * 60 * 24 * 365);
+    if (!data?.signedUrl) throw new Error("Failed to generate download URL");
+    return { url: data.signedUrl, name: file.name };
   }, []);
 
   return { createNotice, updateNotice, deleteNotice, uploadAttachment };
