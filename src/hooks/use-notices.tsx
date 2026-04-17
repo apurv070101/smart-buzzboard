@@ -2,7 +2,11 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Tables } from "@/integrations/supabase/types";
 
-export type Notice = Tables<"notices">;
+export type Notice = Tables<"notices"> & {
+  profiles: {
+    full_name: string | null;
+  } | null;
+};
 export type NoticeCategory = "exam" | "event" | "urgent" | "general";
 
 export function useNotices() {
@@ -13,21 +17,46 @@ export function useNotices() {
   const fetchNotices = useCallback(async () => {
     const { data, error } = await supabase
       .from("notices")
-      .select("*")
+      .select(`
+        *,
+        profiles (
+          full_name
+        )
+      `)
       .order("created_at", { ascending: false });
 
-    if (!error && data) {
-      setNotices(data);
-      setLastFetchedAt(new Date());
+    if (error) {
+      console.error("Error fetching notices:", error);
+      return;
     }
+    
+    if (data) {
+      console.log("Notices fetched successfully:", data);
+      setNotices(data as unknown as Notice[]);
+    }
+    setLastFetchedAt(new Date());
     setLoading(false);
   }, []);
 
   useEffect(() => {
     fetchNotices();
-    // Auto refresh every 30 seconds
-    const interval = setInterval(fetchNotices, 30000);
-    return () => clearInterval(interval);
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel("notices-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notices" },
+        (payload) => {
+          console.log("Realtime update received:", payload);
+          fetchNotices();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchNotices]);
 
   const newNoticesSince = useCallback(

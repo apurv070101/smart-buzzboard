@@ -1,4 +1,4 @@
-import { BookOpen, Calendar as CalendarIcon, PartyPopper, AlertTriangle, Inbox, Paperclip, Download } from "lucide-react";
+import { BookOpen, Calendar as CalendarIcon, PartyPopper, AlertTriangle, Inbox, Paperclip, Download, User as UserIcon } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { Notice } from "@/hooks/use-notices";
@@ -32,9 +32,17 @@ export function NoticeCard({ notice }: { notice: Notice }) {
               <span className="h-2 w-2 rounded-full bg-destructive animate-pulse-dot" />
             )}
           </div>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <CalendarIcon className="h-3 w-3" />
-            {date}
+          <div className="flex flex-col items-end gap-1 text-[10px] text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <CalendarIcon className="h-2.5 w-2.5" />
+              {date}
+            </div>
+            {notice.profiles?.full_name && (
+              <div className="flex items-center gap-1">
+                <UserIcon className="h-2.5 w-2.5" />
+                {notice.profiles.full_name}
+              </div>
+            )}
           </div>
         </div>
         <h3 className="mt-2 text-base font-semibold leading-snug text-card-foreground">{notice.title}</h3>

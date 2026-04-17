@@ -22,6 +22,7 @@ function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [mode, setMode] = useState<"signin" | "signup">("signin");
@@ -34,7 +35,12 @@ function LoginPage() {
       if (mode === "signin") {
         await signIn(email, password);
       } else {
-        await signUp(email, password);
+        if (!fullName.trim()) {
+          setError("Full name is required");
+          setLoading(false);
+          return;
+        }
+        await signUp(email, password, fullName);
         setError("Check your email to confirm your account.");
         setLoading(false);
         return;
@@ -62,6 +68,19 @@ function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</div>
+            )}
+            {mode === "signup" && (
+              <div className="space-y-1.5">
+                <Label htmlFor="fullName">Full Name</Label>
+                <Input
+                  id="fullName"
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  placeholder="John Doe"
+                  required
+                />
+              </div>
             )}
             <div className="space-y-1.5">
               <Label htmlFor="email">Email</Label>

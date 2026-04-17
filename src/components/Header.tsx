@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Moon, Sun, Bell, Shield, Megaphone } from "lucide-react";
+import { Moon, Sun, Bell, Shield, Megaphone, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface HeaderProps {
@@ -46,9 +46,25 @@ export function Header({ isDark, onToggleDark, isAdmin, isLoggedIn, newNoticesCo
           )}
 
           {isLoggedIn ? (
-            <Button variant="ghost" size="sm" onClick={onSignOut}>
-              Sign Out
-            </Button>
+            <div className="flex items-center gap-2">
+              <Link to="/profile">
+                <Button variant="ghost" size="sm" className="gap-1.5">
+                  <User className="h-4 w-4" />
+                  Profile
+                </Button>
+              </Link>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => {
+                  console.log("Sign out clicked");
+                  onSignOut?.();
+                }} 
+                className="text-muted-foreground"
+              >
+                Sign Out
+              </Button>
+            </div>
           ) : (
             <Link to="/login">
               <Button variant="default" size="sm">Sign In</Button>
